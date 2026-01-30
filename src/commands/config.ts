@@ -3,11 +3,8 @@ import * as readline from 'readline';
 import {
   cliHeader,
   sectionHeader,
-  divider,
-  tableRow,
   formatTokens,
-  success,
-  info,
+  kvPair,
 } from '../utils/format.js';
 import {
   loadConfig,
@@ -17,13 +14,10 @@ import {
   updateLimit,
   updateAlert,
   resetConfig,
-  getLimitsDescription,
-  getAlertsDescription,
   getConfigPath,
   Config,
   PlanLimits,
   AlertThresholds,
-  DEFAULTS,
 } from '../config/store.js';
 
 interface ConfigOptions {
@@ -49,112 +43,79 @@ export async function configCommand(options: ConfigOptions): Promise<void> {
     return;
   }
 
-  // Default: show current config
   await showConfig();
 }
 
 async function showConfig(): Promise<void> {
-  console.log(cliHeader());
+  console.log(cliHeader('Configuration'));
   console.log();
 
   const config = loadConfig();
 
-  console.log(sectionHeader('Current Configuration'));
-  console.log();
-  console.log(chalk.dim(`Config file: ${getConfigPath()}`));
+  console.log(sectionHeader('Settings'));
   console.log();
 
   // Plan info
-  console.log(tableRow('Plan Type', config.planType));
-  console.log(tableRow('Week Starts', getDayName(config.weekStartDay)));
-  console.log(tableRow('Timezone', config.timezone));
-
-  console.log();
-  console.log(divider());
-  console.log();
+  console.log(`  ${kvPair('Plan', config.planType)}`);
+  console.log(`  ${kvPair('Week starts', getDayName(config.weekStartDay))}`);
+  console.log(`  ${kvPair('Timezone', config.timezone)}`);
 
   // Limits
-  console.log(sectionHeader('Plan Limits'));
+  console.log();
+  console.log(sectionHeader('Limits'));
   console.log();
 
-  console.log(chalk.bold('  Session:'));
-  console.log(tableRow('    Messages', String(config.limits.messagesPerSession)));
-  console.log(tableRow('    Tokens', formatTokensNum(config.limits.tokensPerSession)));
-
-  console.log();
-  console.log(chalk.bold('  Daily:'));
-  console.log(tableRow('    Messages', String(config.limits.messagesPerDay)));
-  console.log(tableRow('    Tokens', formatTokensNum(config.limits.tokensPerDay)));
-
-  console.log();
-  console.log(chalk.bold('  Weekly:'));
-  console.log(tableRow('    Messages', String(config.limits.messagesPerWeek)));
-  console.log(tableRow('    Tokens', formatTokensNum(config.limits.tokensPerWeek)));
-
-  console.log();
-  console.log(divider());
-  console.log();
+  console.log(`  ${chalk.dim('Session')}   ${kvPair('tokens', formatTokensNum(config.limits.tokensPerSession))}   ${kvPair('messages', config.limits.messagesPerSession.toString())}`);
+  console.log(`  ${chalk.dim('Daily')}     ${kvPair('tokens', formatTokensNum(config.limits.tokensPerDay))}   ${kvPair('messages', config.limits.messagesPerDay.toString())}`);
+  console.log(`  ${chalk.dim('Weekly')}    ${kvPair('tokens', formatTokensNum(config.limits.tokensPerWeek))}   ${kvPair('messages', config.limits.messagesPerWeek.toString())}`);
 
   // Alerts
-  console.log(sectionHeader('Alert Thresholds'));
+  console.log();
+  console.log(sectionHeader('Alerts'));
   console.log();
 
-  console.log(tableRow('Session Warning', `${config.alerts.sessionWarning}%`));
-  console.log(tableRow('Daily Warning', `${config.alerts.dailyWarning}%`));
-  console.log(tableRow('Weekly Warning', `${config.alerts.weeklyWarning}%`));
+  console.log(`  ${kvPair('Session warning', `${config.alerts.sessionWarning}%`)}`);
+  console.log(`  ${kvPair('Weekly warning', `${config.alerts.weeklyWarning}%`)}`);
+  console.log(`  ${kvPair('Notifications', config.alerts.enableSystemNotifications ? 'on' : 'off')}`);
 
+  // Help
   console.log();
-  console.log(tableRow('System Notifications', config.alerts.enableSystemNotifications ? 'enabled' : 'disabled'));
-  console.log(tableRow('Terminal Alerts', config.alerts.enableTerminalAlerts ? 'enabled' : 'disabled'));
-
-  console.log();
-  console.log(divider());
-  console.log();
-
-  console.log(chalk.dim('Usage:'));
-  console.log(chalk.dim('  claudometer config --plan pro|free     Set plan type'));
-  console.log(chalk.dim('  claudometer config --set key=value     Set a specific value'));
-  console.log(chalk.dim('  claudometer config --reset             Reset to defaults'));
-  console.log();
-  console.log(chalk.dim('Available settings:'));
-  console.log(chalk.dim('  limits.tokensPerSession, limits.tokensPerDay, limits.tokensPerWeek'));
-  console.log(chalk.dim('  limits.messagesPerSession, limits.messagesPerDay, limits.messagesPerWeek'));
-  console.log(chalk.dim('  alerts.sessionWarning, alerts.dailyWarning, alerts.weeklyWarning'));
-  console.log(chalk.dim('  alerts.enableSystemNotifications, alerts.enableTerminalAlerts'));
-  console.log(chalk.dim('  weekStartDay (0=Sun, 1=Mon, ...)'));
+  console.log(chalk.dim('  Commands:'));
+  console.log(chalk.dim('    claudometer config --plan pro|free'));
+  console.log(chalk.dim('    claudometer config --set limits.tokensPerWeek=50000000'));
+  console.log(chalk.dim('    claudometer config --reset'));
   console.log();
 }
 
 async function setPlanTypeCommand(planType: 'pro' | 'free' | 'custom'): Promise<void> {
-  const config = setPlanType(planType);
-
-  console.log(success(`Plan type set to: ${planType}`));
+  console.log(cliHeader('Configuration'));
   console.log();
 
+  const config = setPlanType(planType);
+
+  console.log(chalk.green(`  ✓ Plan set to ${planType}`));
+
   if (planType !== 'custom') {
-    console.log(info('Default limits applied:'));
-    const limits = config.limits;
-    console.log(`  Session: ${limits.messagesPerSession} msgs, ${formatTokensNum(limits.tokensPerSession)}`);
-    console.log(`  Daily: ${limits.messagesPerDay} msgs, ${formatTokensNum(limits.tokensPerDay)}`);
-    console.log(`  Weekly: ${limits.messagesPerWeek} msgs, ${formatTokensNum(limits.tokensPerWeek)}`);
     console.log();
-    console.log(chalk.dim('Tip: Use --set to customize individual limits.'));
+    console.log(chalk.dim(`  Session: ${formatTokensNum(config.limits.tokensPerSession)}`));
+    console.log(chalk.dim(`  Weekly: ${formatTokensNum(config.limits.tokensPerWeek)}`));
   }
   console.log();
 }
 
 async function setConfigValue(setting: string): Promise<void> {
+  console.log(cliHeader('Configuration'));
+  console.log();
+
   const [key, value] = setting.split('=');
 
   if (!key || value === undefined) {
-    console.log(chalk.red('Invalid format. Use: --set key=value'));
-    console.log(chalk.dim('Example: --set limits.tokensPerDay=500000'));
+    console.log(chalk.red('  ✗ Invalid format. Use: --set key=value'));
+    console.log();
     return;
   }
 
   const config = loadConfig();
-
-  // Parse the key path
   const parts = key.split('.');
 
   try {
@@ -171,12 +132,12 @@ async function setConfigValue(setting: string): Promise<void> {
       }
 
       updateLimit(limitKey, numValue);
-      console.log(success(`${key} set to ${numValue}`));
+      console.log(chalk.green(`  ✓ ${key} = ${numValue}`));
     } else if (parts[0] === 'alerts' && parts.length === 2) {
       const alertKey = parts[1] as keyof AlertThresholds;
 
       if (!(alertKey in config.alerts)) {
-        throw new Error(`Unknown alert setting: ${alertKey}`);
+        throw new Error(`Unknown alert: ${alertKey}`);
       }
 
       let parsedValue: number | boolean;
@@ -186,25 +147,25 @@ async function setConfigValue(setting: string): Promise<void> {
       } else {
         parsedValue = parseInt(value, 10);
         if (isNaN(parsedValue) || parsedValue < 0 || parsedValue > 100) {
-          throw new Error('Threshold must be a number between 0 and 100');
+          throw new Error('Threshold must be 0-100');
         }
       }
 
       updateAlert(alertKey, parsedValue as AlertThresholds[typeof alertKey]);
-      console.log(success(`${key} set to ${parsedValue}`));
+      console.log(chalk.green(`  ✓ ${key} = ${parsedValue}`));
     } else if (key === 'weekStartDay') {
       const dayNum = parseInt(value, 10) as 0 | 1 | 2 | 3 | 4 | 5 | 6;
       if (isNaN(dayNum) || dayNum < 0 || dayNum > 6) {
-        throw new Error('weekStartDay must be 0-6 (0=Sunday, 1=Monday, ...)');
+        throw new Error('weekStartDay must be 0-6');
       }
       updateConfig({ weekStartDay: dayNum });
-      console.log(success(`Week start day set to ${getDayName(dayNum)}`));
+      console.log(chalk.green(`  ✓ Week starts ${getDayName(dayNum)}`));
     } else {
-      throw new Error(`Unknown setting: ${key}`);
+      throw new Error(`Unknown: ${key}`);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.log(chalk.red(`Error: ${message}`));
+    console.log(chalk.red(`  ✗ ${message}`));
   }
   console.log();
 }
@@ -215,14 +176,17 @@ async function resetConfigInteractive(): Promise<void> {
     output: process.stdout,
   });
 
-  rl.question('Reset all settings to defaults? (y/N) ', (answer) => {
+  console.log(cliHeader('Configuration'));
+  console.log();
+
+  rl.question('  Reset to defaults? (y/N) ', (answer) => {
     rl.close();
 
     if (answer.toLowerCase() === 'y') {
       resetConfig();
-      console.log(success('Configuration reset to defaults.'));
+      console.log(chalk.green('  ✓ Reset complete'));
     } else {
-      console.log(chalk.dim('Reset cancelled.'));
+      console.log(chalk.dim('  Cancelled'));
     }
     console.log();
   });

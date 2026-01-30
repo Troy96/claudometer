@@ -2,13 +2,14 @@ import chalk from 'chalk';
 import {
   cliHeader,
   sectionHeader,
-  divider,
-  tableRow,
   formatTokens,
   formatDuration,
-  sparkline,
+  miniBar,
   getDayName,
   relativeTime,
+  kvPair,
+  hr,
+  sparkline,
 } from '../utils/format.js';
 import {
   getRecentTrend,
@@ -26,160 +27,160 @@ interface HistoryOptions {
 }
 
 export async function historyCommand(options: HistoryOptions): Promise<void> {
-  console.log(cliHeader());
-  console.log();
-
   const days = options.days || 7;
 
   if (options.projects) {
+    console.log(cliHeader('Project breakdown'));
+    console.log();
     await showProjectBreakdown();
     return;
   }
 
   if (options.sessions) {
+    console.log(cliHeader('Session history'));
+    console.log();
     await showSessionHistory();
     return;
   }
 
-  // Default: show usage trends
+  console.log(cliHeader('Usage analytics'));
+  console.log();
   await showUsageTrends(days);
 }
 
 async function showUsageTrends(days: number): Promise<void> {
-  console.log(sectionHeader(`Usage Trends (Last ${days} Days)`));
-  console.log();
-
   const trend = await getRecentTrend(days);
 
-  // Daily breakdown with mini chart
+  // Daily breakdown
+  console.log(sectionHeader(`Last ${days} Days`));
+  console.log();
+
   const tokenValues = trend.map(d => d.estimatedTokens);
   const maxTokens = Math.max(...tokenValues, 1);
 
   for (const day of trend) {
     const dayDate = new Date(day.date);
     const dayName = getDayName(dayDate.getDay());
-    const dateStr = day.date.slice(5);  // MM-DD
-
+    const dateStr = day.date.slice(5); // MM-DD
     const isToday = day.date === new Date().toISOString().split('T')[0];
 
-    const barWidth = Math.round((day.estimatedTokens / maxTokens) * 20);
-    const bar = '█'.repeat(barWidth) + '░'.repeat(20 - barWidth);
+    const label = isToday
+      ? chalk.white(`${dayName} ${dateStr}`)
+      : chalk.dim(`${dayName} ${dateStr}`);
 
-    const dayLabel = isToday
-      ? chalk.bold(`${dayName} ${dateStr}`)
-      : `${dayName} ${dateStr}`;
+    const bar = miniBar(day.estimatedTokens, maxTokens, 12);
+    const tokens = formatTokens(day.estimatedTokens).padStart(6);
+    const msgs = chalk.dim(`${day.messages} msgs`);
 
-    const tokens = formatTokens(day.estimatedTokens);
-    const msgs = day.messages;
+    console.log(`  ${label.padEnd(20)} ${bar}  ${tokens}  ${msgs}`);
+  }
 
-    console.log(`  ${dayLabel.padEnd(14)} ${chalk.cyan(bar)} ${tokens.padStart(6)} | ${msgs} msgs`);
+  // Sparkline summary
+  if (tokenValues.length > 1) {
+    console.log();
+    console.log(`  ${chalk.dim('Trend')}  ${sparkline(tokenValues)}`);
   }
 
   // Summary stats
   console.log();
-  console.log(divider());
+  console.log(sectionHeader('Summary'));
   console.log();
 
   const totalTokens = trend.reduce((sum, d) => sum + d.estimatedTokens, 0);
   const totalMessages = trend.reduce((sum, d) => sum + d.messages, 0);
   const totalSessions = trend.reduce((sum, d) => sum + d.sessions, 0);
   const activeDays = trend.filter(d => d.messages > 0).length;
+  const avgPerDay = activeDays > 0 ? Math.round(totalTokens / activeDays) : 0;
 
-  console.log(sectionHeader('Summary'));
-  console.log();
-  console.log(tableRow('Total Tokens', formatTokens(totalTokens)));
-  console.log(tableRow('Total Messages', String(totalMessages)));
-  console.log(tableRow('Total Sessions', String(totalSessions)));
-  console.log(tableRow('Active Days', `${activeDays} / ${days}`));
-
-  if (activeDays > 0) {
-    console.log(tableRow('Avg per Active Day', formatTokens(Math.round(totalTokens / activeDays))));
-  }
-
-  console.log();
-  console.log(divider());
-  console.log();
-
-  // Hourly patterns
-  await showHourlyPatterns();
-}
-
-async function showHourlyPatterns(): Promise<void> {
-  console.log(sectionHeader('Activity by Hour'));
-  console.log();
-
-  const patterns = await getHourlyPatterns();
-
-  // Group into time blocks for display
-  const timeBlocks = [
-    { name: 'Morning (6-12)', hours: [6, 7, 8, 9, 10, 11] },
-    { name: 'Afternoon (12-18)', hours: [12, 13, 14, 15, 16, 17] },
-    { name: 'Evening (18-24)', hours: [18, 19, 20, 21, 22, 23] },
-    { name: 'Night (0-6)', hours: [0, 1, 2, 3, 4, 5] },
+  const stats = [
+    kvPair('Total', formatTokens(totalTokens)),
+    kvPair('Messages', totalMessages.toString()),
+    kvPair('Sessions', totalSessions.toString()),
+    kvPair('Avg/day', formatTokens(avgPerDay)),
   ];
 
-  for (const block of timeBlocks) {
-    const blockPatterns = patterns.filter(p => block.hours.includes(p.hour));
-    const totalMessages = blockPatterns.reduce((sum, p) => sum + p.averageMessages, 0);
-    const totalSessions = blockPatterns.reduce((sum, p) => sum + p.sessionCount, 0);
+  console.log(`  ${stats.join('  │  ')}`);
 
-    if (totalMessages > 0 || totalSessions > 0) {
-      console.log(`  ${block.name.padEnd(20)} ${totalMessages} avg msgs, ${totalSessions} sessions`);
-    }
-  }
+  // Activity patterns
+  console.log();
+  await showActivityPatterns();
+}
 
-  // Suggest optimal times
-  const optimalHours = suggestOptimalTimes(patterns);
-  if (optimalHours.length > 0) {
+async function showActivityPatterns(): Promise<void> {
+  const patterns = await getHourlyPatterns();
+
+  console.log(sectionHeader('Peak Hours'));
+  console.log();
+
+  // Find peak hours
+  const sortedByActivity = [...patterns]
+    .filter(p => p.averageMessages > 0)
+    .sort((a, b) => b.averageMessages - a.averageMessages);
+
+  if (sortedByActivity.length === 0) {
+    console.log(chalk.dim('  No activity data yet'));
     console.log();
-    console.log(chalk.dim(`  Low-traffic hours: ${optimalHours.map(h => `${h}:00`).join(', ')}`));
+    return;
   }
 
+  const peakHours = sortedByActivity.slice(0, 3);
+  const quietHours = suggestOptimalTimes(patterns).slice(0, 3);
+
+  const peakStr = peakHours.map(h => `${h.hour}:00`).join(', ');
+  const quietStr = quietHours.map(h => `${h}:00`).join(', ');
+
+  console.log(`  ${chalk.dim('Most active')}   ${peakStr}`);
+  if (quietStr) {
+    console.log(`  ${chalk.dim('Quietest')}     ${quietStr}`);
+  }
   console.log();
 }
 
 async function showProjectBreakdown(): Promise<void> {
-  console.log(sectionHeader('Usage by Project'));
+  console.log(sectionHeader('Projects'));
   console.log();
 
   const projects = await getProjectStats();
 
   if (projects.length === 0) {
-    console.log(chalk.dim('  No project data available.'));
+    console.log(chalk.dim('  No project data available'));
     console.log();
     return;
   }
 
-  // Show top projects
-  const topProjects = projects.slice(0, 10);
+  const topProjects = projects.slice(0, 8);
   const maxTokens = Math.max(...topProjects.map(p => p.tokens), 1);
 
   for (const project of topProjects) {
-    // Truncate long project names
-    let projectName = project.project;
-    if (projectName.startsWith('-')) {
-      // Convert path format back to readable
-      projectName = projectName.replace(/-/g, '/').slice(1);
-    }
-    if (projectName.length > 30) {
-      projectName = '...' + projectName.slice(-27);
+    let name = project.project;
+
+    // Clean up project path
+    if (name.startsWith('-')) {
+      name = name.replace(/-/g, '/').slice(1);
     }
 
-    const barWidth = Math.round((project.tokens / maxTokens) * 15);
-    const bar = '█'.repeat(barWidth) + '░'.repeat(15 - barWidth);
+    // Get just the last part of the path
+    const parts = name.split('/');
+    name = parts[parts.length - 1] || parts[parts.length - 2] || name;
 
-    const tokens = formatTokens(project.tokens);
-    const lastUsed = relativeTime(project.lastUsed);
+    if (name.length > 20) {
+      name = name.slice(0, 17) + '...';
+    }
 
-    console.log(`  ${projectName.padEnd(32)} ${chalk.cyan(bar)} ${tokens.padStart(7)}`);
-    console.log(chalk.dim(`  ${''.padEnd(32)} ${project.sessions} sessions, ${lastUsed}`));
-    console.log();
+    const bar = miniBar(project.tokens, maxTokens, 10);
+    const tokens = formatTokens(project.tokens).padStart(6);
+    const sessions = chalk.dim(`${project.sessions} sess`);
+    const lastUsed = chalk.dim(relativeTime(project.lastUsed));
+
+    console.log(`  ${name.padEnd(22)} ${bar}  ${tokens}  ${sessions}`);
+    console.log(`  ${' '.repeat(22)} ${' '.repeat(10)}  ${' '.repeat(6)}  ${lastUsed}`);
   }
 
-  if (projects.length > 10) {
-    console.log(chalk.dim(`  ... and ${projects.length - 10} more projects`));
+  if (projects.length > 8) {
     console.log();
+    console.log(chalk.dim(`  +${projects.length - 8} more projects`));
   }
+  console.log();
 }
 
 async function showSessionHistory(): Promise<void> {
@@ -189,45 +190,51 @@ async function showSessionHistory(): Promise<void> {
   const sessions = await getAllSessions();
 
   if (sessions.length === 0) {
-    console.log(chalk.dim('  No session history available.'));
+    console.log(chalk.dim('  No session history'));
     console.log();
     return;
   }
 
-  // Show last 10 sessions
-  const recentSessions = sessions.slice(0, 10);
+  const recentSessions = sessions.slice(0, 8);
 
   for (const session of recentSessions) {
     const age = relativeTime(session.startTime);
     const duration = formatDuration(session.duration);
     const efficiency = calculateSessionEfficiency(session);
 
-    let efficiencyLabel: string;
+    let effIcon: string;
     if (efficiency >= 70) {
-      efficiencyLabel = chalk.green(`${Math.round(efficiency)}% efficient`);
+      effIcon = chalk.green('●');
     } else if (efficiency >= 40) {
-      efficiencyLabel = chalk.yellow(`${Math.round(efficiency)}% efficient`);
+      effIcon = chalk.yellow('●');
     } else {
-      efficiencyLabel = chalk.dim(`${Math.round(efficiency)}% efficient`);
+      effIcon = chalk.dim('○');
     }
 
-    console.log(`  ${chalk.bold(age)}`);
-    console.log(`    Duration: ${duration} | Messages: ${session.messageCount} | Tokens: ${formatTokens(session.estimatedTokens)}`);
-    console.log(`    ${efficiencyLabel}`);
+    // Session header
+    console.log(`  ${effIcon} ${chalk.white(age)}`);
 
+    // Stats line
+    const stats = [
+      kvPair('Duration', duration),
+      kvPair('Messages', session.messageCount.toString()),
+      kvPair('Tokens', formatTokens(session.estimatedTokens)),
+    ];
+    console.log(`    ${stats.join('  ')}`);
+
+    // Project
     if (session.project) {
       let projectName = session.project;
-      if (projectName.length > 40) {
-        projectName = '...' + projectName.slice(-37);
-      }
-      console.log(chalk.dim(`    Project: ${projectName}`));
+      const parts = projectName.split('/');
+      projectName = parts[parts.length - 1] || parts[parts.length - 2] || projectName;
+      console.log(`    ${chalk.dim(projectName)}`);
     }
 
     console.log();
   }
 
-  if (sessions.length > 10) {
-    console.log(chalk.dim(`  ... and ${sessions.length - 10} more sessions`));
+  if (sessions.length > 8) {
+    console.log(chalk.dim(`  +${sessions.length - 8} more sessions`));
     console.log();
   }
 }

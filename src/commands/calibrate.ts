@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { updateConfig, loadConfig } from '../config/store.js';
-import { cliHeader, success, error, info } from '../utils/format.js';
+import { cliHeader, kvPair } from '../utils/format.js';
 import { getCurrentSession, getWeeklyUsage } from '../data/aggregator.js';
 
 interface CalibrateOptions {
@@ -10,7 +10,7 @@ interface CalibrateOptions {
 }
 
 export async function calibrateCommand(options: CalibrateOptions): Promise<void> {
-  console.log(cliHeader());
+  console.log(cliHeader('Calibration'));
   console.log();
 
   const sessionPercent = options.session ? parseFloat(options.session) : null;
@@ -30,16 +30,14 @@ export async function calibrateCommand(options: CalibrateOptions): Promise<void>
     const session = await getCurrentSession();
 
     if (session && session.estimatedTokens > 0) {
-      // If we estimate X tokens and that's Y% of limit, then limit = X / (Y/100)
       const sessionLimit = Math.round(session.estimatedTokens / (sessionPercent / 100));
-
       config.limits.tokensPerSession = sessionLimit;
       hasChanges = true;
 
-      console.log(success(`Session limit: ${formatTokens(sessionLimit)}`));
-      console.log(chalk.dim(`  (${formatTokens(session.estimatedTokens)} tokens = ${sessionPercent}%)`));
+      console.log(chalk.green(`  ✓ Session limit: ${formatTokens(sessionLimit)}`));
+      console.log(chalk.dim(`    ${formatTokens(session.estimatedTokens)} = ${sessionPercent}%`));
     } else {
-      console.log(error('No active session found. Start a session first.'));
+      console.log(chalk.yellow('  ⚠ No active session to calibrate'));
     }
   }
 
@@ -49,14 +47,13 @@ export async function calibrateCommand(options: CalibrateOptions): Promise<void>
 
     if (weekly && weekly.totalTokens > 0) {
       const weeklyLimit = Math.round(weekly.totalTokens / (weeklyPercent / 100));
-
       config.limits.tokensPerWeek = weeklyLimit;
       hasChanges = true;
 
-      console.log(success(`Weekly limit: ${formatTokens(weeklyLimit)}`));
-      console.log(chalk.dim(`  (${formatTokens(weekly.totalTokens)} tokens = ${weeklyPercent}%)`));
+      console.log(chalk.green(`  ✓ Weekly limit: ${formatTokens(weeklyLimit)}`));
+      console.log(chalk.dim(`    ${formatTokens(weekly.totalTokens)} = ${weeklyPercent}%`));
     } else {
-      console.log(error('No weekly usage data found.'));
+      console.log(chalk.yellow('  ⚠ No weekly data to calibrate'));
     }
   }
 
@@ -76,38 +73,33 @@ export async function calibrateCommand(options: CalibrateOptions): Promise<void>
     if (dayNum !== undefined) {
       config.weekStartDay = dayNum as 0 | 1 | 2 | 3 | 4 | 5 | 6;
       hasChanges = true;
-      console.log(success(`Week resets: ${capitalize(resetDay)}`));
+      console.log(chalk.green(`  ✓ Week resets: ${capitalize(resetDay)}`));
     } else {
-      console.log(error(`Invalid day: ${resetDay}`));
+      console.log(chalk.red(`  ✗ Invalid day: ${resetDay}`));
     }
   }
 
   if (hasChanges) {
     updateConfig(config);
     console.log();
-    console.log(chalk.green('✓ Calibration saved!'));
+    console.log(chalk.dim('  Saved'));
   }
 
   console.log();
 }
 
 function showUsage(): void {
-  console.log(info('Calibrate limits using values from /usage command'));
+  console.log(chalk.dim('  Calibrate using values from /usage command'));
   console.log();
-  console.log(chalk.bold('Usage:'));
-  console.log('  claudometer calibrate --session <percent> --weekly <percent> --reset <day>');
+  console.log('  Usage:');
+  console.log(chalk.dim('    claudometer calibrate -s <session%> -w <weekly%> -r <day>'));
   console.log();
-  console.log(chalk.bold('Examples:'));
-  console.log('  claudometer calibrate --session 59 --weekly 29 --reset wed');
-  console.log('  claudometer calibrate --session 45');
-  console.log('  claudometer calibrate --weekly 30 --reset thursday');
+  console.log('  Examples:');
+  console.log(chalk.dim('    claudometer calibrate -s 59 -w 29 -r wed'));
+  console.log(chalk.dim('    claudometer calibrate -s 45'));
+  console.log(chalk.dim('    claudometer calibrate -w 30 -r thursday'));
   console.log();
-  console.log(chalk.bold('Options:'));
-  console.log('  --session <percent>  Session usage % shown in /usage');
-  console.log('  --weekly <percent>   Weekly usage % shown in /usage');
-  console.log('  --reset <day>        Day when weekly limit resets (e.g., wed, thursday)');
-  console.log();
-  console.log(chalk.dim('Run /usage in Claude Code to see your current percentages.'));
+  console.log(chalk.dim('  Run /usage in Claude Code to see your percentages'));
   console.log();
 }
 
