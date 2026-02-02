@@ -81,9 +81,9 @@ async function showConfig(): Promise<void> {
   // Help
   console.log();
   console.log(chalk.dim('  Commands:'));
-  console.log(chalk.dim('    claudometer config --plan pro|free'));
-  console.log(chalk.dim('    claudometer config --set limits.tokensPerWeek=50000000'));
-  console.log(chalk.dim('    claudometer config --reset'));
+  console.log(chalk.dim('    claudetrail config --plan pro|free'));
+  console.log(chalk.dim('    claudetrail config --set limits.tokensPerWeek=50000000'));
+  console.log(chalk.dim('    claudetrail config --reset'));
   console.log();
 }
 

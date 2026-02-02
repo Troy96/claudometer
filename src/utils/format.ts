@@ -188,11 +188,11 @@ function getTerminalWidth(): number {
   return process.stdout.columns || 100;
 }
 
-// ASCII art logo for CLAUDOMETER
+// ASCII art logo for CLAUDETRAIL
 const ASCII_LOGO = [
-  '█▀▀ █   █▀█ █ █ █▀▄ █▀█ █▄█ █▀▀ ▀█▀ █▀▀ █▀█',
-  '█   █   █▀█ █ █ █ █ █ █ █ █ █▀▀  █  █▀▀ █▀▄',
-  '▀▀▀ ▀▀▀ ▀ ▀ ▀▀▀ ▀▀  ▀▀▀ ▀ ▀ ▀▀▀  ▀  ▀▀▀ ▀ ▀',
+  '█▀▀ █   █▀█ █ █ █▀▄ █▀▀ ▀█▀ █▀█ █▀█ ▀█▀ █  ',
+  '█   █   █▀█ █ █ █ █ █▀▀  █  █▀▄ █▀█  █  █  ',
+  '▀▀▀ ▀▀▀ ▀ ▀ ▀▀▀ ▀▀  ▀▀▀  ▀  ▀ ▀ ▀ ▀ ▀▀▀ ▀▀▀',
 ];
 
 // Format the main CLI header - fixed-width banner box
@@ -268,7 +268,7 @@ export function cliHeader(subtitle?: string): string {
   }
 
   // Version and help
-  const versionInfo = chalk.dim(`v1.0.0`) + chalk.dim('  │  ') + chalk.dim('claudometer --help for commands');
+  const versionInfo = chalk.dim(`v1.0.0`) + chalk.dim('  │  ') + chalk.dim('claudetrail --help for commands');
   lines.push(paddedLine(versionInfo, 4));
 
   lines.push(emptyLine());

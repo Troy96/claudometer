@@ -1,10 +1,10 @@
 {
-  "name": "claudometer",
+  "name": "claudetrail",
   "version": "1.0.0",
   "description": "Usage analytics and alerts for Claude Code Pro",
   "main": "dist/index.js",
   "bin": {
-    "claudometer": "./dist/index.js"
+    "claudetrail": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",

@@ -92,12 +92,12 @@ function showUsage(): void {
   console.log(chalk.dim('  Calibrate using values from /usage command'));
   console.log();
   console.log('  Usage:');
-  console.log(chalk.dim('    claudometer calibrate -s <session%> -w <weekly%> -r <day>'));
+  console.log(chalk.dim('    claudetrail calibrate -s <session%> -w <weekly%> -r <day>'));
   console.log();
   console.log('  Examples:');
-  console.log(chalk.dim('    claudometer calibrate -s 59 -w 29 -r wed'));
-  console.log(chalk.dim('    claudometer calibrate -s 45'));
-  console.log(chalk.dim('    claudometer calibrate -w 30 -r thursday'));
+  console.log(chalk.dim('    claudetrail calibrate -s 59 -w 29 -r wed'));
+  console.log(chalk.dim('    claudetrail calibrate -s 45'));
+  console.log(chalk.dim('    claudetrail calibrate -w 30 -r thursday'));
   console.log();
   console.log(chalk.dim('  Run /usage in Claude Code to see your percentages'));
   console.log();

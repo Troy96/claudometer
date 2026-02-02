@@ -1,11 +1,11 @@
-# Claudometer
+# Claudetrail
 
 ```
 ╔════════════════════════════════════════════════════════════════════╗
 ║                                                                    ║
-║            █▀▀ █   █▀█ █ █ █▀▄ █▀█ █▄█ █▀▀ ▀█▀ █▀▀ █▀█             ║
-║            █   █   █▀█ █ █ █ █ █ █ █ █ █▀▀  █  █▀▀ █▀▄             ║
-║            ▀▀▀ ▀▀▀ ▀ ▀ ▀▀▀ ▀▀  ▀▀▀ ▀ ▀ ▀▀▀  ▀  ▀▀▀ ▀ ▀             ║
+║            █▀▀ █   █▀█ █ █ █▀▄ █▀▀ ▀█▀ █▀█ █▀█ ▀█▀ █               ║
+║            █   █   █▀█ █ █ █ █ █▀▀  █  █▀▄ █▀█  █  █               ║
+║            ▀▀▀ ▀▀▀ ▀ ▀ ▀▀▀ ▀▀  ▀▀▀  ▀  ▀ ▀ ▀ ▀ ▀▀▀ ▀▀▀             ║
 ║                                                                    ║
 ║             ━━━  Usage Analytics for Claude Code  ━━━              ║
 ║                                                                    ║
@@ -16,7 +16,7 @@
 
 ![Terminal Screenshot](./screenshot.png)
 
-## Why Claudometer?
+## Why Claudetrail?
 
 Claude Code Pro users face a common problem: **no visibility into usage patterns**. The built-in `/usage` command shows current percentages, but doesn't tell you:
 
@@ -25,26 +25,26 @@ Claude Code Pro users face a common problem: **no visibility into usage patterns
 - Your peak usage hours
 - Whether you're on track for the week
 
-Claudometer fills this gap by analyzing Claude Code's local data files to provide rich analytics that complement the built-in `/usage` command.
+Claudetrail fills this gap by analyzing Claude Code's local data files to provide rich analytics that complement the built-in `/usage` command.
 
 ## Features
 
 | Command | Description |
 |---------|-------------|
-| `claudometer` | 7-day usage trends with sparkline visualization |
-| `claudometer history --projects` | Per-project usage breakdown |
-| `claudometer history --sessions` | Session history with efficiency scores |
-| `claudometer week` | Weekly breakdown with daily chart and forecast |
-| `claudometer watch` | Live monitoring with system alerts |
-| `claudometer calibrate` | One-time calibration from `/usage` percentages |
-| `claudometer config` | Configuration management |
+| `claudetrail` | 7-day usage trends with sparkline visualization |
+| `claudetrail history --projects` | Per-project usage breakdown |
+| `claudetrail history --sessions` | Session history with efficiency scores |
+| `claudetrail week` | Weekly breakdown with daily chart and forecast |
+| `claudetrail watch` | Live monitoring with system alerts |
+| `claudetrail calibrate` | One-time calibration from `/usage` percentages |
+| `claudetrail config` | Configuration management |
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/Troy96/claudometer.git
-cd claudometer
+git clone https://github.com/Troy96/claudetrail.git
+cd claudetrail
 
 # Install dependencies
 npm install
@@ -63,7 +63,7 @@ npm link
 Run `/usage` in Claude Code to see your current percentages, then:
 
 ```bash
-claudometer calibrate -s 59 -w 29 -r wed
+claudetrail calibrate -s 59 -w 29 -r wed
 ```
 
 Where:
@@ -75,26 +75,26 @@ Where:
 
 ```bash
 # Default: 7-day usage trends
-claudometer
+claudetrail
 
 # Weekly overview with forecast
-claudometer week
+claudetrail week
 
 # Per-project breakdown
-claudometer history --projects
+claudetrail history --projects
 
 # Session history
-claudometer history --sessions
+claudetrail history --sessions
 ```
 
 ### 3. Live Monitoring (optional)
 
 ```bash
 # Foreground with live updates
-claudometer watch
+claudetrail watch
 
 # Background daemon (alerts only)
-claudometer watch --daemon
+claudetrail watch --daemon
 ```
 
 ## Sample Output
@@ -149,27 +149,27 @@ The local files don't store actual token counts consumed against the quota. We o
 
 ### Data Sources
 
-Claudometer reads from these Claude Code local files:
+Claudetrail reads from these Claude Code local files:
 - `~/.claude/history.jsonl` - Message history with timestamps
 - `~/.claude/stats-cache.json` - Aggregated daily stats and token counts
 - `~/.claude/projects/*/sessions-index.json` - Session metadata
 
 ## Configuration
 
-Config is stored at `~/.claudometer/config.json`:
+Config is stored at `~/.claudetrail/config.json`:
 
 ```bash
 # View current config
-claudometer config
+claudetrail config
 
 # Set plan type
-claudometer config --plan pro
+claudetrail config --plan pro
 
 # Set custom limits
-claudometer config --set limits.tokensPerWeek=50000000
+claudetrail config --set limits.tokensPerWeek=50000000
 
 # Reset to defaults
-claudometer config --reset
+claudetrail config --reset
 ```
 
 ## Future Improvements
@@ -208,4 +208,4 @@ MIT
 
 ---
 
-*Claudometer is not affiliated with Anthropic. It's an independent tool that reads locally-stored Claude Code data.*
+*Claudetrail is not affiliated with Anthropic. It's an independent tool that reads locally-stored Claude Code data.*

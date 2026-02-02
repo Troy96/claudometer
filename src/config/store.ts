@@ -76,7 +76,7 @@ const DEFAULT_CONFIG: Config = {
 
 // Get config directory
 export function getConfigDir(): string {
-  return path.join(homedir(), '.claudometer');
+  return path.join(homedir(), '.claudetrail');
 }
 
 // Get config file path

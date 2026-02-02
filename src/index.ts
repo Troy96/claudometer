@@ -10,7 +10,7 @@ import { calibrateCommand } from './commands/calibrate.js';
 const program = new Command();
 
 program
-  .name('claudometer')
+  .name('claudetrail')
   .description('Usage analytics and alerts for Claude Code Pro')
   .version('1.0.0');
 
